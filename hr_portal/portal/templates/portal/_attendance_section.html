@@ -1,0 +1,65 @@
+{# Needs: period, summary, and either history (monthly) or breakdown (yearly) #}
+<div class="tiles">
+  <div class="tile tile-wd"><div class="tile-num">{{ summary.period_working_days }}</div><div class="tile-lbl">Working days in {{ period.label }}</div></div>
+  <div class="tile"><div class="tile-num">{{ summary.working_days }}</div><div class="tile-lbl">{% if period.mode == "year" %}Working days so far{% else %}Working days till today{% endif %}</div></div>
+  <div class="tile"><div class="tile-num text-green">{{ summary.present }}</div><div class="tile-lbl">Present</div></div>
+  <div class="tile"><div class="tile-num text-danger">{{ summary.absent }}</div><div class="tile-lbl">Absent</div></div>
+  <div class="tile"><div class="tile-num text-orange">{{ summary.leave }}</div><div class="tile-lbl">Leave</div></div>
+  {% if summary.pending %}<div class="tile"><div class="tile-num text-secondary">{{ summary.pending }}</div><div class="tile-lbl">Today (not in yet)</div></div>{% endif %}
+  <div class="tile"><div class="tile-num">{{ summary.office }}</div><div class="tile-lbl">Days in office</div></div>
+  <div class="tile tile-field">
+    <div class="tile-num">{{ summary.field }}</div><div class="tile-lbl">Days in field work</div>
+    <div class="field-split">
+      <span class="pill pill-orange">On shore {{ summary.field_on }}</span>
+      <span class="pill pill-water">Off shore {{ summary.field_off }}</span>
+      {% if summary.field_unset %}<span class="pill pill-grey">Type not set {{ summary.field_unset }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="tile"><div class="tile-num text-orange">{{ summary.percent }}%</div><div class="tile-lbl">Attendance</div></div>
+</div>
+<div class="progress mb-3" role="progressbar" aria-valuenow="{{ summary.percent }}" aria-valuemin="0" aria-valuemax="100">
+  <div class="progress-bar bar-water" style="width: {{ summary.percent }}%"></div>
+</div>
+<p class="small text-secondary mb-3">Working days exclude Sundays, 2nd Saturdays and government / company holidays. Worked out automatically: <strong>Working days = Present + Leave + Absent{% if summary.pending %} + Today (not in yet){% endif %}</strong>. Today is counted as absent only after the day ends.</p>
+
+{% if period.mode == "year" %}
+  <div class="table-responsive">
+    <table class="table fancy-table phone-table align-middle mb-0">
+      <thead><tr><th>Month</th><th class="text-center">Working</th><th class="text-center">Present</th><th class="text-center">Absent</th><th class="text-center">Leave</th><th class="text-center">Office</th><th class="text-center">Field (On / Off)</th><th class="text-center">%</th></tr></thead>
+      <tbody>
+      {% for m in breakdown %}
+        <tr>
+          <td><strong>{{ m.month }}</strong></td>
+          <td class="text-center">{{ m.working_days }}</td><td class="text-center">{{ m.present }}</td>
+          <td class="text-center">{{ m.absent }}</td><td class="text-center">{{ m.leave }}</td>
+          <td class="text-center">{{ m.office }}</td><td class="text-center">{{ m.field }} <span class="small text-secondary">({{ m.field_on }} / {{ m.field_off }})</span></td>
+          <td class="text-center"><span class="pill pill-water">{{ m.percent }}%</span></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="8" class="text-center text-secondary">No data for {{ period.label }}.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="table-responsive history-scroll">
+    <table class="table fancy-table stack-table history-table align-middle mb-0">
+      <thead><tr><th>Date</th><th>Day</th><th>In Time</th><th>Out Time</th><th>Hours</th><th>Location</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for r in history %}
+        <tr class="{% if r.status == 'Holiday' %}row-muted{% endif %}">
+          <td data-label="Date">{{ r.date|date:"d-M-Y" }}{% if r.label %} <span class="pill pill-water ms-1">{{ r.label }}</span>{% endif %}{% if r.holiday_name %}<div class="small text-secondary">{{ r.holiday_name }}</div>{% endif %}</td>
+          <td data-label="Day">{{ r.date|date:"D" }}</td>
+          <td data-label="In Time">{% if r.in_time %}<span class="time-pill in">{{ r.in_time|time:"h:i A" }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</td>
+          <td data-label="Out Time">{% if r.out_time %}<span class="time-pill out">{{ r.out_time|time:"h:i A" }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</td>
+          <td data-label="Hours">{{ r.hours|default:"--" }}</td>
+          <td data-label="Location">{% if r.work_mode %}<span class="pill {% if r.is_field %}pill-orange{% else %}pill-grey{% endif %}">{{ r.work_mode }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</td>
+          <td data-label="Status"><span class="pill {% if r.status == 'Present' %}pill-green{% elif r.status == 'Absent' %}pill-red blink-slow{% elif r.status == 'Not yet' or r.status == 'Leave' %}pill-orange{% else %}pill-grey{% endif %}">{{ r.status }}</span></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="text-center text-secondary">No days in {{ period.label }} yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}

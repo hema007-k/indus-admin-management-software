@@ -1,0 +1,167 @@
+{% extends base_template|default:"portal/base.html" %}
+{% block title %}{{ emp.full_name }}{% endblock %}
+{% block content %}
+<div class="toolbar toolbar-detail d-flex flex-wrap gap-2 align-items-center mb-3">
+  {% if not is_self or back != "dashboard" %}<a class="btn btn-outline-light" href="{% url back %}">&larr; Back</a>{% endif %}
+  <h5 class="page-title mb-0 me-auto ms-2">{% if is_self %}My Profile{% else %}Employee Details{% endif %}</h5>
+  {% if is_self %}<a class="btn btn-primary" href="{% url 'my_profile_edit' %}">Edit my details</a>{% endif %}
+  {% if not is_self and 'employees_edit' in my_perms %}<a class="btn btn-primary" href="{% url 'employee_edit' emp.pk %}">Edit Employee</a>{% endif %}
+</div>
+
+<div class="panel mb-3">
+  <div class="d-flex flex-wrap align-items-center gap-3">
+    <div class="photo-box">
+      {% include "portal/_avatar.html" with e=emp cls="avatar big-avatar" %}
+      {% if is_self or can_edit_photo %}
+      <form method="post" action="{% url 'employee_photo_save' emp.pk %}" class="photo-form" data-photo-form>
+        {% csrf_token %}
+        <input type="hidden" name="photo_data" value="">
+        <label class="btn btn-outline-light btn-sm mb-0">{% if emp.photo_updated %}Change{% else %}Add photo{% endif %}
+          <input type="file" accept="image/png,image/jpeg,image/webp" hidden data-photo-input></label>
+        {% if emp.photo_updated %}<button class="btn btn-outline-light btn-sm" type="submit" name="remove" value="1">Remove</button>{% endif %}
+      </form>
+      {% endif %}
+    </div>
+    <div class="me-auto">
+      <h4 class="mb-0">{{ emp.full_name }}{% if emp.show_code %} <span class="emp-id emp-id-lg">{{ emp.employee_id }}</span>{% endif %}</h4>
+      <div class="text-secondary">{{ emp.designation.name|default:"No designation" }}</div>
+      <span class="pill {% if emp.status == 'active' %}pill-water{% else %}pill-grey{% endif %}">{{ emp.get_status_display }}</span>
+      {% if emp.blood_group %}<span class="pill pill-red ms-1">Blood {{ emp.blood_group }}</span>{% endif %}
+    </div>
+    <div class="status-today">
+      <span class="status-dot {% if record %}dot-present{% else %}dot-absent dot-blink{% endif %}"><i></i> {% if record %}Present today{% else %}Not in today{% endif %}</span>
+    </div>
+  </div>
+  <ul class="nav nav-pills detail-tabs mt-3">
+    {% for key, label in tabs %}
+      <li class="nav-item"><a class="nav-link {% if tab == key %}active{% endif %}" href="?tab={{ key }}{% if key != 'profile' %}&period={{ period.mode }}&month={{ period.month_value }}&year={{ period.year }}{% endif %}{% if request.GET.from %}&from={{ request.GET.from }}{% endif %}" data-turbo-action="replace">{{ label }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% if tab == "profile" %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="panel h-100">
+      <h6 class="section-h">Personal Information</h6>
+      <div class="row g-3 info-grid">
+        {% if emp.show_code %}<div class="col-sm-6 col-md-4"><div class="k">Employee ID</div><div>{{ emp.employee_id }}</div></div>{% endif %}
+        <div class="col-sm-6 col-md-4"><div class="k">Designation</div><div>{{ emp.designation.name|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Department</div><div>{{ emp.department.name|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Team</div><div>{{ emp.team.name|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Joining Date</div><div>{{ emp.joining_date|date:"d-M-Y"|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Date of Birth</div><div>{{ emp.date_of_birth|date:"d-M-Y"|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Blood Group</div><div>{{ emp.blood_group|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Email</div><div>{{ emp.user.email|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">WhatsApp / Phone</div><div>{{ emp.phone|default:"-" }}</div></div>
+      </div>
+
+      <h6 class="section-h mt-4">Emergency Contacts</h6>
+      <div class="small fw-bold mb-1">Phone number 1</div>
+      <div class="row g-3 info-grid">
+        <div class="col-sm-6 col-md-4"><div class="k">Name</div><div>{{ emp.emergency_name|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Number</div><div>{{ emp.emergency_phone|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Relationship</div><div>{{ emp.emergency_relation|default:"-" }}</div></div>
+      </div>
+      {% if emp.emergency_name2 or emp.emergency_phone2 or emp.emergency_relation2 %}
+      <div class="small fw-bold mt-3 mb-1">Phone number 2</div>
+      <div class="row g-3 info-grid">
+        <div class="col-sm-6 col-md-4"><div class="k">Name</div><div>{{ emp.emergency_name2|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Number</div><div>{{ emp.emergency_phone2|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Relationship</div><div>{{ emp.emergency_relation2|default:"-" }}</div></div>
+      </div>
+      {% endif %}
+
+      <h6 class="section-h mt-4">Address &amp; ID</h6>
+      <div class="row g-3 info-grid">
+        <div class="col-md-6"><div class="k">Permanent address</div><div class="pre-line">{{ emp.permanent_address|default:"-" }}</div></div>
+        <div class="col-md-6"><div class="k">Current address</div><div class="pre-line">{{ emp.current_address|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Aadhaar card number</div><div>{% if not emp.aadhaar_number %}-{% elif show_ids %}{{ emp.aadhaar_display }}{% else %}{{ emp.aadhaar_masked }}{% endif %}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">PAN card number</div><div>{% if not emp.pan_number %}-{% elif show_ids %}{{ emp.pan_number }}{% else %}{{ emp.pan_masked }}{% endif %}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Vehicle number</div><div>{{ emp.vehicle_number|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Medical insurance number</div><div>{{ emp.medical_insurance_number|default:"-" }}</div></div>
+      </div>
+
+      <h6 class="section-h mt-4">Doctor details</h6>
+      <div class="row g-3 info-grid">
+        <div class="col-sm-6 col-md-4"><div class="k">Doctor name</div><div>{{ emp.doctor_name|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Doctor contact</div><div>{{ emp.doctor_phone|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Doctor location</div><div>{{ emp.doctor_location|default:"-" }}</div></div>
+        {% if emp.doctor_name2 or emp.doctor_phone2 or emp.doctor_location2 %}
+        <div class="col-sm-6 col-md-4"><div class="k">Doctor 2 name</div><div>{{ emp.doctor_name2|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Doctor 2 contact</div><div>{{ emp.doctor_phone2|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Doctor 2 location</div><div>{{ emp.doctor_location2|default:"-" }}</div></div>
+        {% endif %}
+        {% if emp.doctor_name3 or emp.doctor_phone3 or emp.doctor_location3 %}
+        <div class="col-sm-6 col-md-4"><div class="k">Doctor 3 name</div><div>{{ emp.doctor_name3|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Doctor 3 contact</div><div>{{ emp.doctor_phone3|default:"-" }}</div></div>
+        <div class="col-sm-6 col-md-4"><div class="k">Doctor 3 location</div><div>{{ emp.doctor_location3|default:"-" }}</div></div>
+        {% endif %}
+      </div>
+
+      <h6 class="section-h mt-4">Designation Details</h6>
+      {% if emp.designation %}
+        <p class="mb-2">{{ emp.designation.description|default:"No description added." }}</p>
+        <div class="d-flex flex-wrap gap-2">
+          {% if emp.role == 'admin' or emp.role == 'hr' %}<span class="pill pill-water">Full access (Admin / HR)</span>
+          {% else %}
+            {% if emp.can_view_employees or emp.can_create_employees or emp.can_edit_employees %}<span class="pill pill-water">Employees: view{% if emp.can_create_employees %} / create{% endif %}{% if emp.can_edit_employees %} / edit{% endif %}</span>{% endif %}
+            {% if emp.can_view_projects or emp.can_create_projects or emp.can_edit_projects %}<span class="pill pill-water">Projects: view{% if emp.can_create_projects %} / create{% endif %}{% if emp.can_edit_projects %} / edit{% endif %}</span>{% endif %}
+            {% if emp.can_manage_leave %}<span class="pill pill-water">Approve leave</span>{% endif %}
+            {% if emp.can_manage_attendance %}<span class="pill pill-water">Manage attendance</span>{% endif %}
+            {% if emp.can_manage_groups %}<span class="pill pill-water">Create chat groups</span>{% endif %}
+            {% if not emp.can_view_employees and not emp.can_create_employees and not emp.can_edit_employees and not emp.can_view_projects and not emp.can_create_projects and not emp.can_edit_projects and not emp.can_manage_leave and not emp.can_manage_attendance and not emp.can_manage_groups %}
+              <span class="pill pill-grey">Own details, own projects, attendance and leave only</span>
+            {% endif %}
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="text-secondary">No designation assigned.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="panel mb-3">
+      <h6 class="section-h">Today</h6>
+      <div class="mb-1"><span class="k">In Time</span> {% if record.in_time %}<span class="time-pill in">{{ record.in_time|time:"h:i A" }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</div>
+      <div class="mb-1"><span class="k">Out Time</span> {% if record.out_time %}<span class="time-pill out">{{ record.out_time|time:"h:i A" }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</div>
+      <div><span class="k">Location</span> {% if record %}<span class="pill {% if record.work_mode == 'field' %}pill-orange{% else %}pill-grey{% endif %}">{{ record.location_label }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</div>
+    </div>
+    <div class="panel">
+      <h6 class="section-h">Login</h6>
+      <div class="mb-2"><div class="k">Username</div><div>{{ emp.user.username }}</div></div>
+      {% if show_password %}
+      <div><div class="k">Password</div>
+        {% if emp.visible_password %}
+          <div class="d-flex align-items-center gap-2">
+            <code class="secret" data-secret-text="{{ emp.visible_password }}" data-secret-hidden="true">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</code>
+            <button type="button" class="btn btn-outline-light btn-sm" data-reveal>Show</button>
+          </div>
+        {% else %}
+          <div class="small text-secondary">Not saved yet{% if not is_self %} - open Edit Employee and set a password{% endif %}.</div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% elif tab == "attendance" %}
+<div class="panel">
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+    <h6 class="mb-0 me-auto">Attendance &amp; Working Days <span class="text-secondary small">- {{ period.label }}</span></h6>
+    {% include "portal/_period_filter.html" %}
+  </div>
+  {% include "portal/_attendance_section.html" %}
+</div>
+
+{% else %}
+<div class="panel">
+  <h6 class="mb-3">Current Projects <span class="text-secondary small">({{ projects_current|length }}) &middot; Office {{ project_office_days }} d &middot; Field {{ project_field_days }} d</span></h6>
+  {% include "portal/_my_projects.html" with plist=projects_current empty_text="No current project." %}
+  <h6 class="mt-4 mb-3">Completed Projects <span class="text-secondary small">({{ projects_completed|length }})</span></h6>
+  {% include "portal/_my_projects.html" with plist=projects_completed empty_text="No completed projects yet." %}
+</div>
+{% endif %}
+{% endblock %}

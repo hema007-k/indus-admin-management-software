@@ -1,0 +1,13 @@
+{# Needs: pg (a Page), qs (query string without the page number), optional param (default "page") #}
+{% if pg.paginator.num_pages > 1 %}
+{% with param=param|default:"page" %}
+<nav class="pager d-flex flex-wrap align-items-center gap-2 mt-3" aria-label="Pages">
+  <span class="small text-secondary me-auto">{{ pg.start_index }}-{{ pg.end_index }} of {{ pg.paginator.count }}</span>
+  <div class="btn-group btn-group-sm">
+    {% if pg.has_previous %}<a class="btn btn-outline-light" href="?{% if qs %}{{ qs }}&{% endif %}{{ param }}={{ pg.previous_page_number }}" data-turbo-action="replace" data-ajax>&laquo; Prev</a>{% else %}<span class="btn btn-outline-light disabled">&laquo; Prev</span>{% endif %}
+    <span class="btn btn-outline-light disabled">Page {{ pg.number }} / {{ pg.paginator.num_pages }}</span>
+    {% if pg.has_next %}<a class="btn btn-outline-light" href="?{% if qs %}{{ qs }}&{% endif %}{{ param }}={{ pg.next_page_number }}" data-turbo-action="replace" data-ajax>Next &raquo;</a>{% else %}<span class="btn btn-outline-light disabled">Next &raquo;</span>{% endif %}
+  </div>
+</nav>
+{% endwith %}
+{% endif %}

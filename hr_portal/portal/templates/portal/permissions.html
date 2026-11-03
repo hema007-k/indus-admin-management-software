@@ -1,0 +1,60 @@
+{% extends base_template|default:"portal/base.html" %}
+{% block title %}Permissions{% endblock %}
+{% block content %}
+<div class="toolbar d-flex flex-wrap gap-2 align-items-center mb-3">
+  <h5 class="page-title mb-0 me-auto">Permissions <span class="text-secondary fs-6">({{ people|length }})</span></h5>
+  <input class="form-control perm-search" type="search" placeholder="Search name, ID, designation..." aria-label="Search people" data-live-filter="perm-matrix" autocomplete="off">
+  <button class="btn btn-primary" type="submit" form="perm-form"><svg class="ico" width="16" height="16"><use href="#i-check"/></svg> Save permissions</button>
+</div>
+
+<div class="panel">
+  <p class="small text-secondary mb-3">Tick what each <strong>person</strong> may do - permissions are not tied to the designation. Admin / HR roles always have full access (locked).
+    <strong>Create</strong> or <strong>Edit</strong> automatically includes <strong>View</strong>. Projects: without View a person sees only the projects assigned to him.</p>
+  <form id="perm-form" method="post" data-perm-form>
+    {% csrf_token %}
+    <div class="table-responsive">
+      <table id="perm-matrix" class="perm-matrix align-middle">
+        <thead>
+          <tr>
+            <th rowspan="2" class="pm-name">Person</th>
+            {% for key, title, cols in columns %}<th colspan="{{ cols|length }}" class="pm-group">{{ title }}</th>{% endfor %}
+            <th rowspan="2" class="pm-quick">All</th>
+          </tr>
+          <tr>
+            {% for key, title, cols in columns %}{% for field, label in cols %}
+              <th class="pm-col"><label class="pm-colhead"><input type="checkbox" data-perm-col="{{ field }}" aria-label="{{ title }} - {{ label }} for everybody"><span>{{ label }}</span></label></th>
+            {% endfor %}{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+        {% for e in people %}
+          <tr{% if e.status != 'active' %} class="row-muted"{% endif %}>
+            <td class="pm-name">
+              <div class="name-cell">{% include "portal/_avatar.html" with e=e cls="mini-avatar" %}
+                <div><a class="name-link" href="{% url 'employee_detail' e.pk %}">{{ e.full_name }}</a>
+                  <div class="small text-secondary">{{ e.employee_id }} &middot; {{ e.designation.name|default:"-" }}</div></div></div>
+            </td>
+            {% if e.full_access %}
+              <td colspan="9" class="pm-full"><span class="pill pill-water"><svg class="ico" width="13" height="13"><use href="#i-lock"/></svg> {{ e.get_role_display }} - full access to everything</span></td>
+              <td class="pm-quick"></td>
+            {% else %}
+              <input type="hidden" name="emp_ids" value="{{ e.pk }}">
+              {% for field, label, on in e.flags %}
+                <td><input type="checkbox" name="p_{{ e.pk }}_{{ field }}" value="1" data-perm="{{ field }}"{% if on %} checked{% endif %} aria-label="{{ e.full_name }} - {{ label }}"></td>
+              {% endfor %}
+              <td class="pm-quick"><button type="button" class="btn btn-outline-light btn-sm" data-perm-row="all">All</button> <button type="button" class="btn btn-outline-light btn-sm" data-perm-row="none">None</button></td>
+            {% endif %}
+          </tr>
+        {% empty %}
+          <tr><td colspan="11" class="text-center text-secondary">No employees yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-3 d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Save permissions</button>
+      <a class="btn btn-outline-light" href="{% url 'permissions' %}">Reset</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

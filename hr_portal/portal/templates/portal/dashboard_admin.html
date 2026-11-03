@@ -1,0 +1,107 @@
+{% extends base_template|default:"portal/base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h5 class="page-title">{{ my_title|default:my_role }} Dashboard <span class="text-secondary fs-6">&middot; {{ today|date:"l, d-M-Y" }}</span></h5>
+
+<div class="tiles tiles-lg mb-3">
+  <div class="tile tile-accent"><span class="tile-ico"><svg width="20" height="20"><use href="#i-users"/></svg></span><div class="tile-num">{{ total_employees }}</div><div class="tile-lbl">Total employees</div></div>
+  <div class="tile"><span class="tile-ico"><svg width="20" height="20"><use href="#i-check"/></svg></span><div class="tile-num text-water">{{ present_today }}</div><div class="tile-lbl">Present today</div></div>
+  <div class="tile"><span class="tile-ico"><svg width="20" height="20"><use href="#i-leave"/></svg></span><div class="tile-num {% if absent_today %}text-danger{% endif %}">{{ absent_today }}</div><div class="tile-lbl">Absent today</div></div>
+  <div class="tile"><span class="tile-ico"><svg width="20" height="20"><use href="#i-folder"/></svg></span><div class="tile-num">{{ projects_in_progress }}</div><div class="tile-lbl">Current projects</div></div>
+  <div class="tile"><span class="tile-ico"><svg width="20" height="20"><use href="#i-building"/></svg></span><div class="tile-num">{{ department_count }}</div><div class="tile-lbl">Departments</div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-8">
+    <div class="panel h-100" id="ajax-region">
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <h6 class="mb-0 me-auto">Employees today status</h6>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Status filter">
+          {% for v, l in st_filters %}<a class="btn btn-outline-light {% if st == v %}active{% endif %}" href="?{% if v %}st={{ v }}{% else %}st={% endif %}" data-turbo-action="replace">{{ l }}</a>{% endfor %}
+        </div>
+        {% if 'employees_view' in my_perms %}<a class="btn btn-outline-light btn-sm" href="{% url 'employee_list' %}">All employees</a>{% endif %}
+      </div>
+      <div class="table-responsive">
+        <table id="today-table" class="table fancy-table phone-table align-middle mb-0">
+          <thead><tr><th>Emp ID</th><th>Name</th><th>Dept</th><th>In Time</th><th>Out Time</th><th>Location</th><th>Status</th></tr></thead>
+          <tbody>
+          {% for e in employees %}
+            <tr>
+              <td>{% if e.show_code %}<span class="emp-id">{{ e.employee_id }}</span>{% else %}--{% endif %}</td>
+              <td><div class="name-cell">{% include "portal/_avatar.html" with e=e cls="mini-avatar" %}
+                <div><a class="name-link" href="{% url 'employee_detail' e.pk %}?from=home">{{ e.full_name }}</a>
+                <div class="small text-secondary">{{ e.designation.name|default:"-" }}</div></div></div></td>
+              <td>{{ e.department.name|default:"-" }}</td>
+              <td>{% if e.today.in_time %}<span class="time-pill in">{{ e.today.in_time|time:"h:i A" }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</td>
+              <td>{% if e.today.out_time %}<span class="time-pill out">{{ e.today.out_time|time:"h:i A" }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</td>
+              <td>{% if e.today %}<span class="pill {% if e.today.work_mode == 'field' %}pill-orange{% else %}pill-grey{% endif %}">{{ e.today.location_label }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</td>
+              <td>{% if e.state == 'inactive' %}<span class="pill pill-grey">Inactive</span>
+                  {% elif e.state == 'present' %}<span class="pill pill-water">Present</span>
+                  {% elif e.state == 'holiday' %}<span class="pill pill-grey">Holiday</span>
+                  {% elif e.state == 'lop' %}<span class="pill pill-red {{ e.blink }}" title="Loss of Pay leave - {{ e.leave_today.days|floatformat:'-1' }} day(s)">Not in &middot; LOP</span>
+                  {% elif e.state == 'leave' %}<span class="pill pill-orange">On leave{% if e.leave_today %} &middot; {{ e.leave_today.leave_type.name }}{% endif %}</span>
+                  {% else %}<span class="pill pill-red {{ e.blink }}">Not in</span>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="text-center text-secondary">No employees yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "portal/_pager.html" with pg=page_obj qs=pager_qs %}
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="panel">
+      <h6 class="mb-3">Project progress</h6>
+      {% for p in project_list %}
+        <div class="mb-3">
+          <div class="d-flex justify-content-between small"><a class="name-link" href="{% url 'project_detail' p.pk %}">{{ p.name }}</a><strong>{{ p.completion }}%</strong></div>
+          <div class="progress mt-1"><div class="progress-bar bar-water" style="width: {{ p.completion }}%"></div></div>
+          <div class="small text-secondary mt-1">{{ p.employees.count }} employee(s)</div>
+        </div>
+      {% empty %}
+        <div class="text-secondary small">No current projects.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="panel">
+      <h6 class="mb-3">Today's project updates <span class="text-secondary small">- {{ today|date:"d-M-Y" }}</span></h6>
+      <div class="table-responsive">
+        <table class="table fancy-table stack-table align-middle mb-0">
+          <thead><tr><th>Employee</th><th>Project</th><th>Completed</th><th>Note</th></tr></thead>
+          <tbody>
+          {% for u in today_updates %}
+            <tr>
+              <td data-label="Employee"><strong>{{ u.employee.full_name }}</strong> <span class="emp-id">{{ u.employee.employee_id }}</span></td>
+              <td data-label="Project"><a class="name-link" href="{% url 'project_detail' u.project.pk %}">{{ u.project.name }}</a></td>
+              <td data-label="Completed"><div class="pct-cell"><div class="progress"><div class="progress-bar bar-water" style="width: {{ u.percent }}%"></div></div><span>{{ u.percent }}%</span></div></td>
+              <td data-label="Note">{{ u.note|default:"-" }}</td>
+            </tr>
+          {% empty %}
+            <tr class="empty-row"><td colspan="4" class="text-center text-secondary">No project update from employees yet today.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="panel quick-actions d-flex flex-wrap gap-2 align-items-center">
+      <h6 class="mb-0 me-auto">Quick Actions</h6>
+      {% if 'employees_create' in my_perms %}<a class="btn btn-primary" href="{% url 'employee_create' %}">Add Employee</a>{% endif %}
+      {% if 'employees_edit' in my_perms %}
+        <a class="btn btn-orange" href="{% url 'department_create' %}">Add Department</a>
+        <a class="btn btn-orange" href="{% url 'team_create' %}">Add Team</a>
+      {% endif %}
+      {% if 'projects_create' in my_perms %}<a class="btn btn-primary" href="{% url 'project_create' %}">Add Project</a>{% endif %}
+      {% if 'leave' in my_perms %}<a class="btn btn-outline-light" href="{% url 'leave_create' %}">Add Leave</a>{% endif %}
+      {% if 'attendance' in my_perms %}<a class="btn btn-outline-light" href="{% url 'attendance_create' %}">Add Attendance</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

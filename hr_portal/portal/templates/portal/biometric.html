@@ -1,0 +1,63 @@
+{% extends base_template|default:"portal/base.html" %}
+{% block title %}Biometric{% endblock %}
+{% block content %}
+<h5 class="page-title">Biometric machines <span class="text-secondary fs-6">&middot; fingerprint / face punch &rarr; In &amp; Out time</span></h5>
+
+<div class="panel mb-3">
+  <h6 class="mb-3">Add a machine</h6>
+  <form method="post" class="row g-2 align-items-end">
+    {% csrf_token %}
+    <div class="col-md-4"><label class="form-label" for="bm-name">Name <span class="text-danger">*</span></label><input id="bm-name" class="form-control" name="name" maxlength="100" placeholder="e.g. Main gate" required></div>
+    <div class="col-md-3"><label class="form-label" for="bm-loc">Location</label><input id="bm-loc" class="form-control" name="location" maxlength="150" placeholder="Optional"></div>
+    <div class="col-md-3"><label class="form-label" for="bm-sn">Serial number</label><input id="bm-sn" class="form-control" name="serial" maxlength="60" placeholder="Only for ZKTeco cloud push"></div>
+    <div class="col-md-2"><button class="btn btn-primary w-100" type="submit">+ Add machine</button></div>
+  </form>
+  <p class="small text-secondary mt-3 mb-0">On the machine, enrol every person with their <strong>Employee ID</strong> (EMP001) as the user ID &mdash; just the number (1 = EMP001) also works.
+    The first punch of the day becomes the <strong>In time</strong>, the last punch becomes the <strong>Out time</strong>.</p>
+</div>
+
+{% for d in devices %}
+<div class="panel mb-3">
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+    <h6 class="mb-0 me-auto">{{ d.name }}{% if d.location %} <span class="text-secondary small">&middot; {{ d.location }}</span>{% endif %}</h6>
+    <span class="pill {% if d.is_active %}pill-water{% else %}pill-grey{% endif %}">{% if d.is_active %}ON{% else %}OFF{% endif %}</span>
+    <span class="small text-secondary">Last punch received: {% if d.last_seen %}{{ d.last_seen|date:"d-M-Y h:i A" }}{% else %}never{% endif %}</span>
+  </div>
+  <div class="row g-2 small">
+    <div class="col-12"><span class="text-secondary">Option 1 &middot; JSON push</span> &mdash; POST <code class="wrap-text">{{ base_url }}{% url 'biometric_punch' %}</code></div>
+    <div class="col-12"><span class="text-secondary">Header</span> <code>X-Device-Key: {{ d.api_key }}</code></div>
+    <div class="col-12"><span class="text-secondary">Option 2 &middot; ZKTeco cloud server</span> &mdash; server <code>{{ request.get_host }}</code>{% if d.serial %}, serial <code>{{ d.serial }}</code>{% else %} <span class="text-danger">(add the serial number to use this)</span>{% endif %}</div>
+  </div>
+  <form method="post" action="{% url 'biometric_action' d.pk %}" class="d-flex flex-wrap gap-2 mt-3">
+    {% csrf_token %}
+    <button class="btn btn-outline-light btn-sm" name="action" value="toggle">{% if d.is_active %}Turn OFF{% else %}Turn ON{% endif %}</button>
+    <button class="btn btn-outline-light btn-sm" name="action" value="newkey" onclick="return confirm('Create a new key? The old key stops working.')">New key</button>
+    <button class="btn btn-outline-danger btn-sm ms-auto" name="action" value="delete" onclick="return confirm('Remove this machine?')">Delete</button>
+  </form>
+</div>
+{% empty %}
+<div class="panel mb-3 text-secondary">No machine added yet. Add one above, then connect the machine with the details that appear here.</div>
+{% endfor %}
+
+<div class="panel">
+  <h6 class="mb-3">Latest punches {% if unknown_count %}<span class="pill pill-orange">{{ unknown_count }} not matched to an employee</span>{% endif %}</h6>
+  <div class="table-responsive">
+    <table class="table fancy-table stack-table align-middle mb-0">
+      <thead><tr><th>Time</th><th>User ID on machine</th><th>Employee</th><th>Machine</th><th>Result</th></tr></thead>
+      <tbody>
+      {% for p in punches %}
+        <tr>
+          <td data-label="Time">{{ p.punched_at|date:"d-M-Y h:i A" }}</td>
+          <td data-label="User ID"><span class="emp-id">{{ p.device_user_id }}</span></td>
+          <td data-label="Employee">{% if p.employee %}<span class="name-nowrap">{{ p.employee.full_name }}</span>{% else %}<span class="text-secondary">--</span>{% endif %}</td>
+          <td data-label="Machine">{{ p.device.name|default:"-" }}</td>
+          <td data-label="Result">{% if p.result == 'in' %}<span class="pill pill-water">In time</span>{% elif p.result == 'out' %}<span class="pill pill-orange">Out time</span>{% elif p.result == 'unknown' %}<span class="pill pill-red">Unknown ID</span>{% else %}<span class="pill pill-grey">Ignored</span>{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="text-center text-secondary">No punches yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

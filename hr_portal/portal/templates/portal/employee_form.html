@@ -1,0 +1,150 @@
+{% extends base_template|default:"portal/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h5 class="page-title">{{ title }}</h5>
+<div class="alert alert-info py-2 small">
+  {% if self_edit %}You can change everything below except your <strong>employee ID</strong> and <strong>name</strong> (HR changes those).{% else %}
+  Compulsory fields are marked <span class="req-star">*</span> : employee ID, name, contact number, mail id and blood group. Everything else is optional.{% endif %}
+  Each person can also edit their own details later from <strong>My Profile</strong>.
+</div>
+<div class="panel">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    {# ---------------------------------------------------------------- basic details #}
+    <div class="form-section">
+      <h6 class="section-h">Basic details</h6>
+      <div class="row g-3">
+        {% if self_edit %}
+          <div class="col-md-6"><label class="form-label">Employee ID</label><input class="form-control" value="{{ emp.employee_id }}" disabled></div>
+          <div class="col-md-6"><label class="form-label">Name</label><input class="form-control" value="{{ emp.full_name }}" disabled></div>
+        {% else %}
+          {% include "portal/_field.html" with f=form.employee_id %}
+          {% include "portal/_field.html" with f=form.first_name %}
+          {% include "portal/_field.html" with f=form.last_name %}
+          {% include "portal/_field.html" with f=form.username %}
+          {% include "portal/_field.html" with f=form.password %}
+        {% endif %}
+        {% include "portal/_field.html" with f=form.phone %}
+        {% include "portal/_field.html" with f=form.email %}
+        {% include "portal/_field.html" with f=form.blood_group %}
+        {% include "portal/_field.html" with f=form.date_of_birth %}
+      </div>
+    </div>
+
+    {% if not self_edit %}
+    <div class="form-section">
+      <h6 class="section-h">Work details</h6>
+      <div class="row g-3">
+        {% include "portal/_field.html" with f=form.department %}
+        {% include "portal/_field.html" with f=form.team %}
+        {% include "portal/_field.html" with f=form.designation %}
+        {% include "portal/_field.html" with f=form.joining_date %}
+        {% include "portal/_field.html" with f=form.status %}
+        {% include "portal/_field.html" with f=form.role %}
+        {% include "portal/_field.html" with f=form.display_priority %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# ---------------------------------------------------------------- emergency contacts #}
+    <div class="form-section">
+      <h6 class="section-h">Emergency contacts</h6>
+      <strong class="d-block mb-2">Phone number 1</strong>
+      <div class="row g-3">
+        {% include "portal/_field.html" with f=form.emergency_name cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.emergency_relation cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.emergency_phone cls="col-md-4" %}
+      </div>
+      <strong class="d-block mt-4 mb-2">Phone number 2</strong>
+      <div class="row g-3">
+        {% include "portal/_field.html" with f=form.emergency_name2 cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.emergency_relation2 cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.emergency_phone2 cls="col-md-4" %}
+      </div>
+    </div>
+
+    {# ---------------------------------------------------------------- address / ids / doctor #}
+    <div class="form-section">
+      <h6 class="section-h">Address</h6>
+      <div class="row g-3">
+        {% include "portal/_field.html" with f=form.permanent_address %}
+        {% include "portal/_field.html" with f=form.current_address %}
+      </div>
+    </div>
+    <div class="form-section">
+      <h6 class="section-h">ID &amp; vehicle</h6>
+      <div class="row g-3">
+        {% include "portal/_field.html" with f=form.aadhaar_number cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.pan_number cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.vehicle_number cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.medical_insurance_number cls="col-md-4" %}
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="d-flex align-items-center mb-2">
+        <h6 class="section-h mb-0 me-auto flex-grow-1">Doctor details <span class="text-secondary text-lowercase">(optional)</span></h6>
+        <button type="button" class="btn btn-outline-light btn-sm ms-2" data-add-doctor title="Add another doctor" aria-label="Add another doctor" {% if not form.can_add_doctor %}hidden{% endif %}>
+          <svg class="ico" width="16" height="16"><use href="#i-plus"/></svg> Add doctor
+        </button>
+      </div>
+      <div class="row g-3">
+        {% include "portal/_field.html" with f=form.doctor_name cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.doctor_phone cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.doctor_location cls="col-md-4" %}
+      </div>
+      <div class="contact-box doctor-box" data-doctor-box="2" {% if not form.show_doctor2 %}hidden{% endif %}>
+        <div class="d-flex align-items-center mb-2">
+          <strong class="me-auto">Doctor 2</strong>
+          <button type="button" class="btn btn-outline-danger btn-sm" data-remove-doctor>Remove</button>
+        </div>
+        <div class="row g-3">
+          {% include "portal/_field.html" with f=form.doctor_name2 cls="col-md-4" %}
+          {% include "portal/_field.html" with f=form.doctor_phone2 cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.doctor_location2 cls="col-md-4" %}
+        </div>
+      </div>
+      <div class="contact-box doctor-box" data-doctor-box="3" {% if not form.show_doctor3 %}hidden{% endif %}>
+        <div class="d-flex align-items-center mb-2">
+          <strong class="me-auto">Doctor 3</strong>
+          <button type="button" class="btn btn-outline-danger btn-sm" data-remove-doctor>Remove</button>
+        </div>
+        <div class="row g-3">
+          {% include "portal/_field.html" with f=form.doctor_name3 cls="col-md-4" %}
+          {% include "portal/_field.html" with f=form.doctor_phone3 cls="col-md-4" %}
+        {% include "portal/_field.html" with f=form.doctor_location3 cls="col-md-4" %}
+        </div>
+      </div>
+    </div>
+
+    {# ---------------------------------------------------------------- permissions (Admin / HR only) #}
+    {% if not self_edit and form.has_permission_fields %}
+    <div class="form-section">
+      <h6 class="section-h">Permissions <span class="text-secondary text-lowercase">(given to this person)</span></h6>
+      <div class="table-responsive">
+        <table class="perm-table">
+          <thead><tr><th></th><th>View</th><th>Create</th><th>Edit</th></tr></thead>
+          <tbody>
+          {% for label, boxes in form.permission_rows %}
+            <tr><td>{{ label }}</td>{% for b in boxes %}<td>{{ b }}</td>{% endfor %}</tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="form-text mb-2">Create or Edit always includes View. Projects: without View the person only sees the projects they are assigned to; with View they see all projects.</div>
+      <div class="d-flex flex-wrap gap-3">
+        {% for b in form.other_permission_fields %}
+          <label class="check-item" for="{{ b.id_for_label }}">{{ b }} <span>{{ b.label }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-4 d-flex gap-2 form-actions">
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-outline-light" href="{% url back %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

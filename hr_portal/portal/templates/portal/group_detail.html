@@ -1,0 +1,91 @@
+{% extends base_template|default:"portal/base.html" %}
+{% block title %}{{ group.name }}{% endblock %}
+{% block content %}
+<div class="toolbar toolbar-detail d-flex flex-wrap gap-2 align-items-center mb-3">
+  <a class="btn btn-outline-light" href="{% url 'group_list' %}"><svg class="ico" width="16" height="16"><use href="#i-back"/></svg> Chat</a>
+  <h5 class="page-title mb-0 me-auto ms-2">{{ group.name }} <span class="text-secondary fs-6">({{ members|length }} member{{ members|length|pluralize }})</span></h5>
+  {% if can_manage_groups %}<a class="btn btn-outline-light btn-sm order-last" href="{% url 'group_edit' group.pk %}"><svg class="ico" width="15" height="15"><use href="#i-edit"/></svg> Edit members</a>{% endif %}
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="panel chat-panel p-0">
+      <div class="chat-head">
+        <span class="group-avatar">{{ group.name|slice:":1"|upper }}</span>
+        <div class="min-w-0"><div class="fw-semibold text-truncate">{{ group.name }}</div>
+          <div class="small text-secondary">{{ members|length }} member{{ members|length|pluralize }}</div></div>
+      </div>
+
+      <div id="ajax-region">
+        <div class="chat-body" data-chat-scroll>
+          {% if history.has_next %}<div class="text-center mb-2"><a class="btn btn-outline-light btn-sm" data-ajax href="?{% if pager_qs %}{{ pager_qs }}&{% endif %}hpage={{ history.next_page_number }}">Show older messages</a></div>{% endif %}
+          {% for g in chat_messages %}
+            <div class="bubble-row {% if g.mine %}me{% endif %}">
+              <div class="bubble">
+                <div class="bubble-by">{% if g.mine %}You{% else %}{{ g.sender.get_full_name|default:g.sender.username|default:"-" }}{% endif %}</div>
+                <div class="bubble-text">{{ g.message|linebreaksbr }}</div>
+                <div class="bubble-time">{{ g.created_at|date:"d-M-Y h:i A" }}</div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="text-center text-secondary py-5"><svg class="ico" width="40" height="40"><use href="#i-chat"/></svg><div class="mt-2">No message yet. Say hello to the group.</div></div>
+          {% endfor %}
+          {% if history.has_previous %}<div class="text-center mt-2"><a class="btn btn-outline-light btn-sm" data-ajax href="?{% if pager_qs %}{{ pager_qs }}&{% endif %}hpage={{ history.previous_page_number }}">Show newer messages</a></div>{% endif %}
+        </div>
+
+        {% if outbox %}
+        <div class="chat-outbox" data-wa-list>
+          <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
+            <strong class="me-auto"><svg class="ico" width="16" height="16"><use href="#i-chat"/></svg> Chat to send <span class="text-secondary small">({{ outbox|length }})</span></strong>
+            <button type="button" class="btn btn-orange btn-sm" data-wa-next><svg class="ico" width="15" height="15"><use href="#i-send"/></svg> Open next chat</button>
+          </div>
+          <p class="small text-secondary mb-2">On a computer this opens the web chat; on a phone it opens the chat app. The message is already typed - press send, then <strong>Done</strong>.</p>
+          <div class="table-responsive">
+            <table id="chat-outbox-table" class="table fancy-table stack-table align-middle mb-0">
+              <thead><tr><th>To</th><th>Message</th><th class="text-end">Action</th></tr></thead>
+              <tbody>
+              {% for n in outbox %}
+                <tr data-wa-row>
+                  <td data-label="To"><strong>{{ n.recipient.full_name }}</strong><div class="small text-secondary">{{ n.recipient.phone|default:"no number" }}</div></td>
+                  <td data-label="Message">{{ n.message|truncatechars:90 }}</td>
+                  <td data-label="Actions" class="text-end text-nowrap">
+                    {% if n.link %}
+                      <a class="btn btn-primary btn-sm" href="{{ n.link }}" data-wa data-wa-phone="{{ n.number }}" data-wa-text="{{ n.message }}" target="_blank" rel="noopener"><svg class="ico" width="15" height="15"><use href="#i-chat"/></svg> Open chat</a>
+                      <form method="post" action="{% url 'notification_sent' n.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="next" value="{% url 'group_detail' group.pk %}"><button class="btn btn-outline-light btn-sm"><svg class="ico" width="15" height="15"><use href="#i-check"/></svg> Done</button></form>
+                    {% else %}
+                      <span class="pill pill-grey">No phone number</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <form method="post" class="chat-composer" data-ajax-post>{% csrf_token %}
+        <textarea class="form-control" name="message" rows="1" maxlength="1000" placeholder="Type a message..." aria-label="Message" required data-chat-input {% if not members %}disabled{% endif %}></textarea>
+        <button class="btn btn-primary chat-send" type="submit" title="Send to group" aria-label="Send to group" {% if not members %}disabled{% endif %}><svg class="ico" width="20" height="20"><use href="#i-send"/></svg></button>
+      </form>
+      <div class="chat-hint small text-secondary">Goes to the portal notifications{% if cloud %} and straight to chat{% else %} + the chat buttons above{% endif %}. Enter = send, Shift+Enter = new line.</div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="panel">
+      <h6 class="mb-3">Members</h6>
+      {% for m in members %}
+        <div class="project-row">
+          <div class="name-cell">{% include "portal/_avatar.html" with e=m cls="mini-avatar" %}
+            <div><strong>{{ m.full_name }}</strong><div class="small text-secondary">{{ m.designation.name|default:"-" }}</div></div></div>
+          {% if m.phone %}<span class="pill pill-water"><svg class="ico" width="13" height="13"><use href="#i-chat"/></svg> Chat</span>{% else %}<span class="pill pill-grey">No number</span>{% endif %}
+        </div>
+      {% empty %}
+        <div class="text-secondary small">No members yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

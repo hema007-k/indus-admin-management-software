@@ -1,0 +1,89 @@
+{% extends base_template|default:"portal/base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h5 class="page-title">My Dashboard <span class="text-secondary fs-6">&middot; {{ today|date:"l, d-M-Y" }}</span></h5>
+{% if holiday_today %}<div class="alert alert-info py-2">Today is a holiday: <strong>{{ holiday_today }}</strong>.</div>{% endif %}
+
+{% if not employee %}
+  <div class="alert alert-warning">No employee profile is linked to this account. Please contact HR.</div>
+{% else %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="panel hero h-100">
+      <div class="d-flex align-items-center gap-3">
+        {% include "portal/_avatar.html" with e=employee cls="avatar big-avatar" %}
+        <div class="min-w-0">
+          <h4 class="mb-0">{{ employee.full_name }}{% if employee.show_code %} <span class="emp-id emp-id-lg">{{ employee.employee_id }}</span>{% endif %}</h4>
+          <div class="text-secondary">{{ employee.designation.name|default:"No designation" }}</div>
+          <div class="mt-1">
+            <span class="pill pill-water">{{ employee.department.name|default:"No department" }}</span>
+            {% if employee.team %}<span class="pill pill-orange ms-1">{{ employee.team.name }}</span>{% endif %}</div>
+        </div>
+      </div>
+      {% if employee.department.description %}<p class="text-secondary small mt-3 mb-0">{{ employee.department.description }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="panel h-100">
+      <div class="d-flex gap-3 mb-2">
+        <span class="status-dot {% if not record %}dot-absent dot-blink{% endif %}"><i></i> Absent</span>
+        <span class="status-dot {% if record %}dot-present{% endif %}"><i></i> Present</span>
+        {% if record %}<span class="pill {% if record.work_mode == 'field' %}pill-orange{% else %}pill-grey{% endif %} ms-auto">{{ record.location_label }}</span>{% endif %}
+      </div>
+      <div class="small text-secondary mb-2">
+        In Time: <strong>{{ record.in_time|time:"h:i A"|default:"--" }}</strong> &nbsp;
+        Out Time: <strong>{{ record.out_time|time:"h:i A"|default:"--" }}</strong>
+      </div>
+      <div class="d-flex gap-2">
+        <form method="post" action="{% url 'clock_in' %}" class="flex-fill d-flex flex-wrap gap-2 clock-form">{% csrf_token %}
+          <select name="work_mode" class="form-select form-select-sm w-auto" aria-label="Location" data-loc-mode {% if record %}disabled{% endif %}>
+            <option value="office">Office</option><option value="field">Field</option>
+          </select>
+          <select name="field_type" class="form-select form-select-sm w-auto" aria-label="On shore or Off shore" data-loc-type hidden {% if record %}disabled{% endif %}>
+            <option value="">On shore / Off shore</option><option value="onshore">On shore</option><option value="offshore">Off shore</option>
+          </select>
+          <button class="btn btn-primary flex-fill" {% if record %}disabled{% endif %}><svg class="ico" width="16" height="16"><use href="#i-clock"/></svg> In Time</button>
+        </form>
+        <form method="post" action="{% url 'clock_out' %}">{% csrf_token %}
+          <button class="btn btn-orange" {% if not record or record.out_time %}disabled{% endif %}>Out Time</button>
+        </form>
+      </div>
+      <div class="small text-secondary mt-2" id="live-clock" data-live-clock></div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="panel">
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <h6 class="mb-0 me-auto">This month <span class="text-secondary small">- {{ period.label }}</span></h6>
+        <a class="btn btn-outline-light btn-sm" href="{% url 'my_profile' %}?tab=attendance">Full attendance</a>
+      </div>
+      <div class="tiles mb-0">
+        <div class="tile"><div class="tile-num">{{ summary.period_working_days }}</div><div class="tile-lbl">Working days in {{ period.label }}</div></div>
+        <div class="tile"><div class="tile-num text-green">{{ summary.present }}</div><div class="tile-lbl">Present</div></div>
+        <div class="tile"><div class="tile-num text-danger">{{ summary.absent }}</div><div class="tile-lbl">Absent</div></div>
+        <div class="tile"><div class="tile-num text-orange">{{ summary.leave }}</div><div class="tile-lbl">Leave</div></div>
+        <div class="tile tile-field">
+          <div class="tile-num">{{ summary.field }}</div><div class="tile-lbl">Days in field work</div>
+          <div class="field-split"><span class="pill pill-orange">On shore {{ summary.field_on }}</span><span class="pill pill-water">Off shore {{ summary.field_off }}</span></div>
+        </div>
+        <div class="tile"><div class="tile-num text-orange">{{ summary.percent }}%</div><div class="tile-lbl">Attendance</div></div>
+      </div>
+      {% if summary.pending %}<p class="small text-secondary mt-2 mb-0">Today is not over yet - it is counted as absent only after the day ends.</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="panel">
+      <div class="d-flex align-items-center mb-3">
+        <h6 class="mb-0 me-auto">Today's project update <span class="text-secondary small">- {{ today|date:"d-M-Y" }}</span></h6>
+        <a class="btn btn-outline-light btn-sm" href="{% url 'project_list' %}">All projects</a>
+      </div>
+      {% include "portal/_daily_update.html" with plist=projects_current next="dashboard" %}
+    </div>
+  </div>
+
+</div>
+{% endif %}
+{% endblock %}

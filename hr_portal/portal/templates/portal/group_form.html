@@ -1,0 +1,54 @@
+{% extends base_template|default:"portal/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h5 class="page-title">{{ title }}</h5>
+<div class="panel">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="row g-3">
+      <div class="col-md-6"><label class="form-label" for="{{ form.name.id_for_label }}">Group name</label>{{ form.name }}{% for e in form.name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      <div class="col-12" data-member-picker>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+          <label class="form-label mb-0">Members</label>
+          <span class="pill pill-water ms-auto" data-member-count>0 selected</span>
+        </div>
+        {% for e in form.members.errors %}<div class="text-danger small mb-1">{{ e }}</div>{% endfor %}
+        <div class="member-tools">
+          <input type="search" class="form-control" data-member-search placeholder="Search by name, ID, designation or department..." aria-label="Search members" autocomplete="off">
+          <div class="member-buttons">
+            <select class="form-select form-select-sm w-auto" data-dept-pick aria-label="Add a whole department">
+              <option value="">+ Add whole department</option>
+              {% for d in departments %}<option value="{{ d.name|lower }}">{{ d.name }}</option>{% endfor %}
+            </select>
+            <button type="button" class="btn btn-outline-light btn-sm" data-member-only>Selected only</button>
+            <button type="button" class="btn btn-outline-light btn-sm" data-member-all>Select shown</button>
+            <button type="button" class="btn btn-outline-light btn-sm" data-member-clear>Clear</button>
+          </div>
+        </div>
+        <div class="table-responsive member-scroll">
+          <table class="table fancy-table align-middle mb-0 member-table">
+            <thead><tr><th>Member</th><th>Department</th></tr></thead>
+            <tbody>
+            {% for m in form.people %}
+              <tr data-member-row data-search="{{ m.search }}" data-dept="{{ m.employee.department.name|lower }}">
+                <td><label class="check-item" for="{{ m.checkbox.id_for_label }}">{{ m.checkbox.tag }}
+                  <span>{{ m.employee.full_name }}<span class="d-block small text-secondary">{{ m.employee.designation.name|default:"-" }}</span></span></label></td>
+                <td>{{ m.employee.department.name|default:"-" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="2" class="text-secondary text-center">No active employees.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <div class="text-center text-secondary py-3" data-member-empty hidden>No member matches your search.</div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4 d-flex gap-2 form-actions">
+      <button class="btn btn-primary" type="submit">Save group</button>
+      <a class="btn btn-outline-light" href="{% url 'group_list' %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

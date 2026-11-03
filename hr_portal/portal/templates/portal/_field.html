@@ -1,0 +1,7 @@
+{# One form field: label (with a red star when compulsory), the input, help and errors. Needs: f (a bound field), optional cls #}
+<div class="{{ cls|default:'col-md-6' }}">
+  <label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}{% if f.field.required %}<span class="req-star" title="Compulsory">*</span>{% endif %}</label>
+  {{ f }}
+  {% if f.help_text %}<div class="form-text">{{ f.help_text }}</div>{% endif %}
+  {% for err in f.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+</div>

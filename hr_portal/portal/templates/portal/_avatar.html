@@ -1,0 +1,1 @@
+{% if e.photo_updated %}<img class="{{ cls }} avatar-img" src="{% url 'employee_photo' e.pk %}?v={{ e.photo_updated|date:'U' }}" alt="" loading="lazy">{% else %}<span class="{{ cls }}">{{ e.full_name|slice:":1"|upper }}</span>{% endif %}

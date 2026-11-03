@@ -1,0 +1,65 @@
+{% extends base_template|default:"portal/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h5 class="page-title">{{ title }}{% if first_time %} <span class="text-secondary fs-6">&middot; Step 2 of 2</span>{% endif %}</h5>
+<div class="panel mb-3">
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <div class="me-auto min-w-0">
+      <strong class="wrap-text">{{ project.name }}</strong>
+      <span class="small text-secondary">{% if project.project_code %}&middot; {{ project.project_code }}{% endif %}{% if project.client %} &middot; {{ project.client }}{% endif %}</span>
+      <div class="small text-secondary proj-desc">{{ project.description|truncatewords:30 }}</div>
+    </div>
+    <a class="btn btn-outline-light btn-sm" href="{% url 'project_edit' project.pk %}">Edit project details</a>
+  </div>
+</div>
+<div class="panel">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div data-member-picker>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+        <label class="form-label mb-0">Members, work &amp; days</label>
+        <span class="pill pill-water ms-auto" data-member-count>0 selected</span>
+      </div>
+      <div class="form-text mb-2">Search the employee, tick the member, choose the <strong>Location</strong> (Office / Field - for Field also choose On shore or Off shore), write the work given (up to 100 words) and the number of days. At least one member is needed.</div>
+      {% for e in form.employees.errors %}<div class="text-danger small mb-1">{{ e }}</div>{% endfor %}
+      <div class="member-tools">
+        <input type="search" class="form-control" data-member-search placeholder="Search members by name, ID, designation, department or team..." aria-label="Search members" autocomplete="off">
+        <div class="member-buttons">
+          <button type="button" class="btn btn-outline-light btn-sm" data-member-only>Selected only</button>
+          <button type="button" class="btn btn-outline-light btn-sm" data-member-all>Select shown</button>
+          <button type="button" class="btn btn-outline-light btn-sm" data-member-clear>Clear</button>
+        </div>
+      </div>
+      <div class="table-responsive member-scroll">
+        <table class="table fancy-table align-middle mb-0 member-table">
+          <thead><tr><th>Member</th><th class="member-mode-col">Location</th><th>Work assigned (description)</th><th class="member-days-col">No. of days</th></tr></thead>
+          <tbody>
+          {% for m in form.members %}
+            <tr data-member-row data-search="{{ m.search }}">
+              <td>
+                <label class="check-item" for="{{ m.checkbox.id_for_label }}">{{ m.checkbox.tag }}
+                  <span><span class="emp-id">{{ m.employee.employee_id }}</span> {{ m.employee.full_name }}
+                    <span class="d-block small text-secondary">{{ m.employee.designation.name|default:"-" }}{% if m.employee.team %} &middot; {{ m.employee.team.name }}{% endif %}</span></span>
+                </label>
+              </td>
+              <td>{{ m.mode }}{% for e in m.mode.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                <div class="mt-1" data-loc-holder hidden>{{ m.ftype }}{% for e in m.ftype.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div></td>
+              <td>{{ m.work }}{% for e in m.work.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+              <td>{{ m.days }}{% for e in m.days.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="text-secondary text-center">No active employees.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        <div class="text-center text-secondary py-3" data-member-empty hidden>No member matches your search.</div>
+      </div>
+    </div>
+    <div class="mt-4 d-flex gap-2 form-actions">
+      <button class="btn btn-primary" type="submit">Save members</button>
+      <a class="btn btn-outline-light" href="{% url back %}">{% if first_time %}Do it later{% else %}Cancel{% endif %}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
