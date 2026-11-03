@@ -160,6 +160,7 @@
     var table = wrap.querySelector("table");
     if (!table || !table.tBodies[0]) { return; }
     var rows = dataRows(table.tBodies[0]).filter(function (tr) { return !tr.hidden; });
+    if (window.matchMedia("(max-width: 800px)").matches) { wrap.style.maxHeight = ""; wrap.classList.remove("is-scroll"); return; }   // phone: the PAGE scrolls, never a box inside the page
     if (rows.length <= VISIBLE_ROWS) { wrap.style.maxHeight = ""; wrap.classList.remove("is-scroll"); return; }
     if (!table.offsetParent) { return; }                       // hidden tab: measured when it is shown
     var h = rows[VISIBLE_ROWS].getBoundingClientRect().top - table.getBoundingClientRect().top;

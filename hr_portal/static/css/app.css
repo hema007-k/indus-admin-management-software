@@ -879,3 +879,39 @@ img.mini-avatar { display: inline-block; object-fit: cover; border: 1px solid va
 .employee-table .dept-head { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .employee-table .dept-head strong { font-size: 1rem; white-space: nowrap; }
 .employee-table .dept-head .pct-cell { min-width: 160px; }
+
+/* =====================================================================================
+   v16c - phone: easy, natural scrolling + bigger touch targets
+   ===================================================================================== */
+@media (max-width: 800px) {
+  /* 1. one scroll only: the page. (overflow-x:hidden on html/body made some phones scroll badly) */
+  html, body { overflow-x: visible; overflow-y: auto; height: auto; overscroll-behavior-y: auto; -webkit-overflow-scrolling: touch; }
+  body { overflow-x: clip; }
+  /* 2. no scroll boxes inside the page - they trap the finger */
+  .table-responsive.tscroll, .history-scroll, .member-scroll, .tscroll {
+    max-height: none !important; overflow-y: visible !important; overscroll-behavior: auto !important;
+  }
+  .tscroll thead th, .history-scroll thead th, .member-scroll thead th { position: static; box-shadow: none; }
+  /* wide tables still slide sideways, but up/down swipes go to the page */
+  .table-responsive { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; overscroll-behavior-y: auto; touch-action: pan-x pan-y; }
+  .table-responsive::-webkit-scrollbar { height: 6px; }
+  .sidebar { position: static !important; max-height: none !important; overflow: visible; min-height: 0 !important; }
+  /* 3. forms: 16px text stops the phone zooming in on every tap; bigger buttons are easier to hit */
+  .form-control, .form-select, input, select, textarea { font-size: 16px !important; min-height: 44px; }
+  textarea.form-control { min-height: 88px; }
+  .btn { min-height: 42px; padding-top: .5rem; padding-bottom: .5rem; }
+  .btn-sm { min-height: 38px; }
+  .icon-btn { min-width: 38px; min-height: 38px; display: inline-flex; align-items: center; justify-content: center; }
+  .fancy-table tbody td, .fancy-table thead th { padding-top: .65rem; padding-bottom: .65rem; }
+  a, button, .btn, .icon-btn, .side-link { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  /* 4. cards / panels use the full width, less padding wasted */
+  .panel, .card { padding: 12px; border-radius: 12px; }
+  .content h5.page-title, .page-title { font-size: 1.1rem; }
+  .toolbar { flex-wrap: wrap; gap: 8px; }
+  .toolbar .search-form { flex: 1 1 100%; }
+  .toolbar .btn { flex: 1 1 auto; }
+  /* 5. keep content clear of the fixed header and the bottom menu */
+  .content { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+  .modal-dialog { margin: .5rem; }
+  .dropdown-menu { max-width: calc(100vw - 20px); }
+}

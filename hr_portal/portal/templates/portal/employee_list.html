@@ -18,14 +18,14 @@
   <div class="table-responsive">
     <table id="emp-table" class="table fancy-table phone-table employee-table align-middle mb-0">
       <thead>
-        <tr><th class="sel-col">{% if 'employees_edit' in my_perms %}<input type="checkbox" data-select-all aria-label="Select all employees" title="Select all">{% endif %}</th><th>Emp ID</th><th>Name</th><th class="hide-xs">Designation</th><th class="hide-sm">Department</th><th class="hide-sm">Team</th><th>Attendance <span class="small text-secondary">({{ month_label }})</span></th><th class="hide-xs">Status</th><th class="text-end">Actions</th></tr>
+        <tr><th class="sel-col">{% if 'employees_edit' in my_perms %}<input type="checkbox" data-select-all aria-label="Select all employees" title="Select all">{% endif %}</th><th>Emp ID</th><th>Name</th><th class="hide-xs">Designation</th><th class="hide-sm">Department</th><th class="hide-sm">Team</th><th class="hide-xs">Status</th><th class="text-end">Actions</th></tr>
       </thead>
       <tbody>
       {% for g in dept_groups %}
         <tr class="dept-row" data-search="{{ g.name }}">
-          <td colspan="9">
+          <td colspan="8">
             <div class="dept-head"><strong>{{ g.name }}</strong><span class="small text-secondary">{{ g.count }} employee{{ g.count|pluralize }}</span>
-              <div class="pct-cell ms-auto"><div class="progress"><div class="progress-bar bar-water" style="width: {{ g.percent }}%"></div></div><span>{{ g.percent }}%</span></div></div>
+              </div>
           </td>
         </tr>
       {% for e in g.rows %}
@@ -40,7 +40,7 @@
           <td class="hide-xs">{{ e.designation.name|default:"-" }}</td>
           <td class="hide-sm">{{ e.department.name|default:"-" }}</td>
           <td class="hide-sm">{{ e.team.name|default:"-" }}</td>
-          <td><div class="pct-cell"><div class="progress"><div class="progress-bar bar-water" style="width: {{ e.month_percent }}%"></div></div><span>{{ e.month_percent }}%</span></div></td>
+          
           <td class="hide-xs"><span class="pill {% if e.status == 'active' %}pill-water{% else %}pill-grey{% endif %}">{{ e.get_status_display }}</span></td>
           <td class="text-end text-nowrap">
             <a class="icon-btn" href="{% url 'employee_detail' e.pk %}" title="View" aria-label="View">
@@ -58,7 +58,7 @@
         </tr>
       {% endfor %}
       {% empty %}
-        <tr><td colspan="9" class="text-center text-secondary">{% if q %}No employee matches "{{ q }}".{% else %}No employees yet.{% endif %}</td></tr>
+        <tr><td colspan="8" class="text-center text-secondary">{% if q %}No employee matches "{{ q }}".{% else %}No employees yet.{% endif %}</td></tr>
       {% endfor %}
       </tbody>
     </table>
