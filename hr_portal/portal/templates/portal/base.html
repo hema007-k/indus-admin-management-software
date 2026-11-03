@@ -65,7 +65,7 @@
           <a class="nav-link side-link {% if url == 'organization' or 'department' in url or 'team' in url or 'designation' in url or 'leavetype' in url %}active{% endif %}" href="{% url 'organization' %}"><svg class="ico" width="19" height="19"><use href="#i-building"/></svg><span>Org Setup</span></a>
         {% endif %}
         {% if is_manager %}<a class="nav-link side-link {% if url == 'permissions' %}active{% endif %}" href="{% url 'permissions' %}"><svg class="ico" width="19" height="19"><use href="#i-lock"/></svg><span>Permissions</span></a>{% endif %}
-        {% if is_manager %}<a class="nav-link side-link {% if 'biometric' in url %}active{% endif %}" href="{% url 'biometric_list' %}"><svg class="ico" width="19" height="19"><use href="#i-finger"/></svg><span>Biometric</span></a>{% endif %}
+        <!-- {% if is_manager %}<a class="nav-link side-link {% if 'biometric' in url %}active{% endif %}" href="{% url 'biometric_list' %}"><svg class="ico" width="19" height="19"><use href="#i-finger"/></svg><span>Biometric</span></a>{% endif %} -->
         <a class="nav-link side-link {% if 'project' in url %}active{% endif %}" href="{% url 'project_list' %}"><svg class="ico" width="19" height="19"><use href="#i-folder"/></svg><span>{% if 'projects_view' in my_perms %}Project{% else %}My Projects{% endif %}</span></a>
         <a class="nav-link side-link {% if 'leave' in url and 'leavetype' not in url %}active{% endif %}" href="{% url 'leave_list' %}"><svg class="ico" width="19" height="19"><use href="#i-leave"/></svg><span>Leave</span></a>
         <a class="nav-link side-link {% if 'holiday' in url %}active{% endif %}" href="{% url 'holiday_list' %}"><svg class="ico" width="19" height="19"><use href="#i-flag"/></svg><span>Holidays</span></a>

@@ -915,3 +915,10 @@ img.mini-avatar { display: inline-block; object-fit: cover; border: 1px solid va
   .modal-dialog { margin: .5rem; }
   .dropdown-menu { max-width: calc(100vw - 20px); }
 }
+
+/* v16d - attendance ring: the coloured part = the percentage, the rest stays plain */
+.ring { --size: 46px; --c: #22c55e; width: var(--size); height: var(--size); border-radius: 50%; display: inline-grid; place-items: center; position: relative;
+  background: conic-gradient(var(--c) calc(var(--p) * 1%), rgba(128, 150, 170, .22) 0); }
+.ring::before { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--panel, #fff); }
+.ring b { position: relative; font-size: .68rem; font-weight: 700; line-height: 1; }
+@media (max-width: 640px) { .ring { --size: 40px; } .ring::before { inset: 4px; } .ring b { font-size: .6rem; } }
